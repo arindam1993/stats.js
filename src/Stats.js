@@ -1,5 +1,7 @@
 /**
  * @author mrdoob / http://mrdoob.com/
+ * @author arindam1993 - Forked to allow for multiple stats panels per `Stats` obj.
+ * 						(https://github.com/arindam1993/stats.js)
  */
 
 var Stats = function () {
