@@ -3,53 +3,44 @@
  */
 
 var Stats = function () {
-
-	var mode = 0;
+	var DEFAULT_PANELS ={};
 
 	var container = document.createElement( 'div' );
 	container.style.cssText = 'position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000';
-	container.addEventListener( 'click', function ( event ) {
-
-		event.preventDefault();
-		showPanel( ++ mode % container.children.length );
-
-	}, false );
-
-	//
-
+	var panelsHash = {}
 	function addPanel( panel ) {
-
 		container.appendChild( panel.dom );
+		panelsHash[panel.name] = panel;
 		return panel;
 
 	}
 
-	function showPanel( id ) {
+	function showPanel( panelName ) {
+		panelsHash[ panelName ].dom.style.display = 'block';
+	}
 
-		for ( var i = 0; i < container.children.length; i ++ ) {
-
-			container.children[ i ].style.display = i === id ? 'block' : 'none';
-
-		}
-
-		mode = id;
-
+	function hidepanel(panelName) {
+		panelsHash[ panelName ].dom.style.display = 'none';
 	}
 
 	//
 
 	var beginTime = ( performance || Date ).now(), prevTime = beginTime, frames = 0;
 
-	var fpsPanel = addPanel( new Stats.Panel( 'FPS', '#0ff', '#002' ) );
-	var msPanel = addPanel( new Stats.Panel( 'MS', '#0f0', '#020' ) );
+	DEFAULT_PANELS['FPS'] = new Stats.Panel( 'FPS', '#0ff', '#002' );
+	var fpsPanel = DEFAULT_PANELS['FPS'];
+	DEFAULT_PANELS['MS'] = new Stats.Panel( 'MS', '#0f0', '#020' );
+	var msPanel = DEFAULT_PANELS['MS'];
 
 	if ( self.performance && self.performance.memory ) {
 
-		var memPanel = addPanel( new Stats.Panel( 'MB', '#f08', '#201' ) );
-
+		DEFAULT_PANELS['MB'] = new Stats.Panel( 'MB', '#f08', '#201' );
+		var memPanel = DEFAULT_PANELS['MB'];
 	}
 
-	showPanel( 0 );
+	function addDefaultPanel(panelName) {
+		addPanel(DEFAULT_PANELS[panelName]);
+	}
 
 	return {
 
@@ -59,6 +50,8 @@ var Stats = function () {
 
 		addPanel: addPanel,
 		showPanel: showPanel,
+		addDefaultPanel: addDefaultPanel,
+		hidePanel: hidepanel,
 
 		begin: function () {
 
@@ -100,6 +93,10 @@ var Stats = function () {
 
 		},
 
+		updatePanel: function( panelName, value, maxValue) {
+			panelsHash[panelName].update(value, maxValue);
+		},
+
 		// Backwards Compatibility
 
 		domElement: container,
@@ -114,15 +111,15 @@ Stats.Panel = function ( name, fg, bg ) {
 	var min = Infinity, max = 0, round = Math.round;
 	var PR = round( window.devicePixelRatio || 1 );
 
-	var WIDTH = 80 * PR, HEIGHT = 48 * PR,
+	var WIDTH = 200 * PR, HEIGHT = 48 * PR,
 			TEXT_X = 3 * PR, TEXT_Y = 2 * PR,
 			GRAPH_X = 3 * PR, GRAPH_Y = 15 * PR,
-			GRAPH_WIDTH = 74 * PR, GRAPH_HEIGHT = 30 * PR;
+			GRAPH_WIDTH = 194 * PR, GRAPH_HEIGHT = 30 * PR;
 
 	var canvas = document.createElement( 'canvas' );
 	canvas.width = WIDTH;
 	canvas.height = HEIGHT;
-	canvas.style.cssText = 'width:80px;height:48px';
+	canvas.style.cssText = 'display:none;width:200px;height:48px';
 
 	var context = canvas.getContext( '2d' );
 	context.font = 'bold ' + ( 9 * PR ) + 'px Helvetica,Arial,sans-serif';
@@ -140,7 +137,7 @@ Stats.Panel = function ( name, fg, bg ) {
 	context.fillRect( GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT );
 
 	return {
-
+		name: name,
 		dom: canvas,
 
 		update: function ( value, maxValue ) {
@@ -152,7 +149,7 @@ Stats.Panel = function ( name, fg, bg ) {
 			context.globalAlpha = 1;
 			context.fillRect( 0, 0, WIDTH, GRAPH_Y );
 			context.fillStyle = fg;
-			context.fillText( round( value ) + ' ' + name + ' (' + round( min ) + '-' + round( max ) + ')', TEXT_X, TEXT_Y );
+			context.fillText( round( value ) + ' ' + name + ' (' + round( min ) + '/' + round( max ) + ')', TEXT_X, TEXT_Y );
 
 			context.drawImage( canvas, GRAPH_X + PR, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT, GRAPH_X, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT );
 
